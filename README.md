@@ -1,2 +1,6 @@
-Gaussian Teleportation Diffusion
+# Gaussian Teleportation Diffusion
 ---
+
+![](media/Figure_Schematics.png)
+
+

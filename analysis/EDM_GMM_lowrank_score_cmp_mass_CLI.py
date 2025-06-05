@@ -22,6 +22,14 @@ from torchvision.transforms import ToPILImage
 from generate import edm_sampler
 from training.dataset import ImageFolderDataset
 
+
+from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from core.analytical_score_lib import explained_var_vec
+from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
+from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
+
+
 tabdir = "/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
 train_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/training-runs"
 pretrain_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/pretrained"
@@ -94,11 +102,6 @@ eigvecs = eigvecs.flip(1)
 edm_imgshape = Xtsr.shape[1:]
 edm_std_mean = (torch.trace(edm_Xcov) / edm_Xcov.shape[0]).sqrt()
 #%%
-from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from core.analytical_score_lib import explained_var_vec
-from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
-    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
 
 print("Computing GMM clusters")
 kmeans_batch = 2048

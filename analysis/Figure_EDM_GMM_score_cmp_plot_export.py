@@ -1,3 +1,9 @@
+"""
+This script is used to visualize the approximation error of EDM score by GMM score. 
+At various training steps and with different number of modes and components. 
+It assumes the computation has been done and the results are stored in the csv files.
+with the key plotting function `visualize_train_run_score_cmp`.
+"""
 # %% [markdown]
 # ## GMM vs EDM 
 # %%
@@ -11,24 +17,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from torchvision.utils import make_grid, save_image
 # from core.gmm_special_dynamics import alpha
-sys.path.append("/n/home12/binxuwang/Github/mini_edm")
+# sys.path.append("/n/home12/binxuwang/Github/mini_edm")
 sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
-# from train_edm import edm_sampler, EDM, create_model
-# from core.edm_utils import get_default_config, create_edm
 from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-# %%
-figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
-figsumdir = join(figroot, "GMM_EDM_training_summary")
-os.makedirs(figsumdir, exist_ok=True)
 #%%
 from matplotlib.ticker import ScalarFormatter
 epochfmt = ScalarFormatter()
-epochfmt.set_powerlimits((-3,4))  # Or whatever your limits are . . .
+epochfmt.set_powerlimits((-3,4))  # Or whatever the limits are . . .
 def visualize_train_run_score_cmp(df_syn, plot_var="St_residual", palette="turbo", 
              hue_order=["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
                         "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"], 
@@ -82,6 +82,10 @@ def visualize_train_run_score_cmp(df_syn, plot_var="St_residual", palette="turbo
     return figh, axs
 
 
+# %%
+figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
+figsumdir = join(figroot, "GMM_EDM_training_summary")
+os.makedirs(figsumdir, exist_ok=True)
 # %% [markdown]
 # ### MNIST EDM training process vs GMM scores
 # %% [markdown]
@@ -261,15 +265,6 @@ visualize_train_run_score_cmp(df_syn_ffhq_lt, plot_var="Dt_residual",
                                 hue_order=ffhq_score_names, 
                                 train_run_name="FFHQ origin EDM 35k epochs late phase",
                                 savename="ffhq_edm_gmm_denoiser_residual_ev_late_epochs");
-
-
-# %%
-
-
-
-
-
-
 
 
 # %%

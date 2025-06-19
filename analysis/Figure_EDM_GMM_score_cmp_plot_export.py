@@ -15,8 +15,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from torchvision.utils import make_grid, save_image
-sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
+sys.path.append("../")
 from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)

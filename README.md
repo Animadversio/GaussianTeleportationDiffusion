@@ -23,7 +23,7 @@ $$$$
 
 
 
-If you are curious about the analytical diffusion trajectory of delta mixture and Gaussian mixture models, we provided the demo: 
+If you are curious about the analytical diffusion trajectory of delta mixture and general Gaussian mixture models, we provided the demo: 
 ```python
 from gaussian_teleport import demo_delta_gmm_diffusion, demo_gaussian_mixture_diffusion
 fig1 = demo_delta_gmm_diffusion(nreps=500, mus=None, sigma=1E-5)
@@ -43,6 +43,11 @@ We host the pre-computed mean and covariance matrices for common image datasets.
 * FFHQ64
 * AFHQ64
 * ImagNet64
+
+### Organization 
+- `gaussian_teleport` contains the core libraries for the project, including functions to compute analytical scores and analytical diffusion trajectories. 
+- `Tables` contains most of pre-computed tables, easy to reproduce figures or analysis in the paper. 
+
 
 ### Run benchmark experiments yourself
 ```python

@@ -1,4 +1,11 @@
 
+"""
+This script is used to visualize the approximation error of EDM score by GMM score. 
+As a function of the rank of the GMM and the number of modes, focusing on the MNIST and CIFAR10 datasets.
+It assumes the computation has been done and the results are stored in the csv files in the `Tables` directory.
+It plot it in a different way than the previous script, focusing on the contribution of 
+the number of modes beyond the Gaussian score, and the minimal required rank to achieve a certain level of approximation.
+"""
 #%%
 # %load_ext autoreload
 # %autoreload 2

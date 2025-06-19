@@ -15,7 +15,7 @@ sys.path.append("/n/home12/binxuwang/Github/mini_edm")
 sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
 # from train_edm import edm_sampler, EDM, create_model
 # from core.edm_utils import get_default_config, create_edm
-from core.utils.plot_utils import saveallforms
+from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)

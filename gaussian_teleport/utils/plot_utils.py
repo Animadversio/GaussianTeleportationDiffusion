@@ -4,7 +4,7 @@ import torch
 from os.path import join
 from torchvision.transforms import ToPILImage
 from torchvision.utils import make_grid
-from core.utils.montage_utils import make_grid_T
+from gaussian_teleport.utils.montage_utils import make_grid_T
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['pdf.fonttype'] = 42

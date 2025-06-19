@@ -3,8 +3,8 @@
 import sys
 sys.path.append("..")
 from os.path import join
-from core.utils.plot_utils import saveallforms
-from core.utils.montage_utils import crop_all_from_montage, make_grid_np
+from gaussian_teleport.utils.plot_utils import saveallforms
+from gaussian_teleport.utils.montage_utils import crop_all_from_montage, make_grid_np
 import matplotlib.pyplot as plt
 import torch 
 import numpy as np

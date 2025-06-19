@@ -128,7 +128,7 @@ from core.analytical_score_lib import explained_var_vec
 from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
 from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
     gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
-from core.utils.plot_utils import saveallforms
+from gaussian_teleport.utils.plot_utils import saveallforms
 
 def score_slice_projection(anchors, edm, edm_Xmean, edm_Xcov, edm_imgshape,
                            sigmas=[0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0], titlestr="",

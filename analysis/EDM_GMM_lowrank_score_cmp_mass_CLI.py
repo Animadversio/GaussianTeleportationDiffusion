@@ -19,14 +19,14 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
-from generate import edm_sampler
-from training.dataset import ImageFolderDataset
+from gaussian_teleport.edm_utils import edm_sampler
+from edm.dataset import ImageFolderDataset
 
 
-from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from core.analytical_score_lib import explained_var_vec
-from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from gaussian_teleport.analytical_score_lib import explained_var_vec
+from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
+from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
     gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
 
 

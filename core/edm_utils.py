@@ -3,10 +3,10 @@ import pandas as pd
 import torch
 import sys
 from easydict import EasyDict as edict
-sys.path.append("/n/home12/binxuwang/Github/mini_edm")
 
 def create_edm(path, config, device="cuda"):
-    from train_edm import create_model, EDM
+    sys.path.append("../")
+    from mini_edm.train_edm import create_model, EDM # TODO: fix the import
     model = create_model(config)
     if path is not None:
         model.load_state_dict(torch.load(path))
@@ -19,7 +19,8 @@ def create_edm(path, config, device="cuda"):
     return edm, model
 
 #----------------------------------------------------------------------------
-# Proposed EDM sampler (Algorithm 2).
+# Proposed EDM sampler (Algorithm 2). (independent design)
+## https://github.com/NVlabs/edm/blob/main/generate.py#L25
 def edm_sampler(
     net, latents, class_labels=None, randn_like=torch.randn_like,
     num_steps=18, sigma_min=0.002, sigma_max=80, rho=7,
@@ -58,36 +59,6 @@ def edm_sampler(
     return x_next
 
 
-def parse_train_logfile(logfile_path):
-    # logfile = "/n/home12/binxuwang/Github/mini_edm/exps/base_mnist_20240129-1342/std.log"
-    # Define the regex pattern to extract the desired information
-    # pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (\w+): (.*)"
-    pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+(\w+)\s+-->\s+step:\s+(\d+),\s+current lr:\s+([\d.]+)\s+average loss:\s+([\d.]+);\s+batch loss:\s+([\d.]+)"
-
-    # Create empty lists to store the extracted information
-    df_col = []
-    # Read the logfile line by line and extract the desired information
-    with open(logfile_path, "r") as file:
-        for line in file:
-            match = re.match(pattern, line)
-            if match:
-                timestamp = match.group(1)
-                level = match.group(2)
-                step = match.group(3)
-                learning_rate = match.group(4)
-                average_loss = match.group(5)
-                batch_loss = match.group(6)
-                df_col.append({"timestamp": timestamp, "level": level, "step": int(step),
-                                "learning_rate": float(learning_rate), "average_loss": float(average_loss),
-                                "batch_loss": float(batch_loss),})
-
-    # Create a pandas dataframe from the extracted information
-    df = pd.DataFrame(df_col)
-    # Display the dataframe
-    print(df.tail())
-    return df
-
-
 @torch.no_grad()
 def edm_sampler_inpaint(
     edm, latents, target_img, mask, class_labels=None,
@@ -123,6 +94,36 @@ def edm_sampler_inpaint(
             x_next = x_hat + (t_next - t_hat) * (0.5 * d_cur + 0.5 * d_prime)
 
     return x_next
+
+
+def parse_train_logfile(logfile_path):
+    # logfile = "/n/home12/binxuwang/Github/mini_edm/exps/base_mnist_20240129-1342/std.log"
+    # Define the regex pattern to extract the desired information
+    # pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (\w+): (.*)"
+    pattern = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+(\w+)\s+-->\s+step:\s+(\d+),\s+current lr:\s+([\d.]+)\s+average loss:\s+([\d.]+);\s+batch loss:\s+([\d.]+)"
+
+    # Create empty lists to store the extracted information
+    df_col = []
+    # Read the logfile line by line and extract the desired information
+    with open(logfile_path, "r") as file:
+        for line in file:
+            match = re.match(pattern, line)
+            if match:
+                timestamp = match.group(1)
+                level = match.group(2)
+                step = match.group(3)
+                learning_rate = match.group(4)
+                average_loss = match.group(5)
+                batch_loss = match.group(6)
+                df_col.append({"timestamp": timestamp, "level": level, "step": int(step),
+                                "learning_rate": float(learning_rate), "average_loss": float(average_loss),
+                                "batch_loss": float(batch_loss),})
+
+    # Create a pandas dataframe from the extracted information
+    df = pd.DataFrame(df_col)
+    # Display the dataframe
+    print(df.tail())
+    return df
 
 
 def get_default_config(dataset_name, **kwargs):

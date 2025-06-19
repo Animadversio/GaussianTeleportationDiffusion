@@ -512,7 +512,7 @@ def test_lowrank_score_correct(n_components = 5, npnts = 40):
     score_fullrank = gaussian_mixture_score_batch_sigma_torch(xs, mus, Us_full, Lambdas_full,)
     assert torch.allclose(score_lowrank, score_fullrank, atol=1e-4, rtol=1e-4)
 
-#%%
+
 def test_lowrank_gauss_score_correct(n_components = 1, npnts = 40, ndim = 3,
     n_rank = 2):
     # test low rank version

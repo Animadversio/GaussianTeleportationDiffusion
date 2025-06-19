@@ -19,7 +19,17 @@ $$$$
 
 ## User Guide
 ### Code Demo 
+
+
+
+
+If you are curious about the analytical diffusion trajectory of delta mixture and Gaussian mixture models, we provided the demo: 
 ```python
+from gaussian_teleport import demo_delta_gmm_diffusion, demo_gaussian_mixture_diffusion
+fig1 = demo_delta_gmm_diffusion(nreps=500, mus=None, sigma=1E-5)
+fig1.show()
+fig2 = demo_gaussian_mixture_diffusion(nreps=500, mus=None, Us=None, Lambdas=None)
+fig2.show()
 ```
 
 ### Image Quality / Speed

@@ -1,0 +1,2 @@
+from .gmm_general_diffusion_lib import demo_gaussian_mixture_diffusion
+from .gmm_special_diffusion_lib import demo_delta_gmm_diffusion

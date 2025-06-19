@@ -1,3 +1,8 @@
+"""
+This file contains the code for the general case of GMM diffusion, where the GMM is a mixture of Gaussian distributions with different means, covariances, and weights.
+It contains functions to compute the density, log probability, and scores of the GMM, and the analytical solution for the reverse diffusion process.
+The main function demo the reverse diffusion process of a general GMM.
+"""
 import numpy as np
 import math
 import torch
@@ -351,7 +356,3 @@ if __name__ == "__main__":
     test_gaussian_mixture_unimodal_case(ndim=10, npnts=10)
     test_gaussian_mixture_multimodal_case(ncomp=10, ndim=100, npnts=10)
     test_gaussian_mixture_multimodal_case_stable(ncomp=10, ndim=500, npnts=10)
-#%%
-
-
-

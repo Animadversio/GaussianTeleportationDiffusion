@@ -1,3 +1,8 @@
+"""
+This file contains the code for the special case of GMM diffusion, where the GMM is a delta function.
+It contains functions to compute the density, log probability, and scores of the GMM, and the analytical solution for the reverse diffusion process.
+The main function demo the reverse diffusion process of a delta mixture model.
+"""
 import math
 import torch
 import torch.nn.functional as F

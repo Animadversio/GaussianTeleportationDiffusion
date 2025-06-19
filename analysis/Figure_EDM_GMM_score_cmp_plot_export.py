@@ -81,8 +81,9 @@ def visualize_train_run_score_cmp(df_syn, plot_var="St_residual", palette="turbo
 
 
 # %%
-tabdir = "/Users/binxuwang/Github/GaussianTeleportationDiffusion/Tables"
-figroot = "/Users/binxuwang/Github/GaussianTeleportationDiffusion/Figures"
+rootdir = "../" # e.g. "/Users/binxuwang/Github/GaussianTeleportationDiffusion"
+tabdir = join(rootdir, "Tables")
+figroot = join(rootdir, "Figures")
 figsumdir = join(figroot, "GMM_EDM_training_summary")
 os.makedirs(figsumdir, exist_ok=True)
 

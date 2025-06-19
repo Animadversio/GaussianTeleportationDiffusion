@@ -1,3 +1,9 @@
+"""
+Provide
+- classes to compute Gaussian Mixture Model (GMM), log probability and its score. in numpy and torch.
+- functions to fit the GMM to a dataset using K-means.(approximation)
+- trainable DNN inspired by the GMM score structure, initialized with the GMM parameters.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,6 +11,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
+from torch.distributions import MultivariateNormal
 
 
 class GaussianMixture:
@@ -106,7 +113,6 @@ class GaussianMixture:
         return prob, logprob, score_vecs
 
 
-from torch.distributions import MultivariateNormal
 class GaussianMixture_torch:
     def __init__(self, mus, covs, weights):
         """
@@ -380,21 +386,7 @@ def kmeans_initialized_gmm(Xtrain, n_clusters,
                             lambda_EPS=lambda_EPS)
     return gmm_km_cov, kmeans
 
-
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-def eval_score_model(Xtrain_norm, score_model, Nbatch=100, batch_size=2048, sigma_max=10, device="cuda"):
-    loss_traj = eval_score_td(Xtrain_norm, 
-            score_model, nepochs=Nbatch, batch_size=batch_size, 
-            sigma=sigma_max, device=device) # clipnorm=1,
-    # 50 full Gaussian GMM with Kmeans mean + cov initialization => 72 loss
-    Nparameters = count_parameters(score_model)
-    print (f"Average loss {np.mean(loss_traj):.3f}  ({batch_size}x{Nbatch} pnts)")
-    print("Num of parameters", count_parameters(score_model))
-    return np.mean(loss_traj), Nparameters
-
+# %% A few trainable DNN inspired by the GMM score structure
 class GMM_ansatz_net(nn.Module):
 
     def __init__(self, ndim, n_components, sigma=5.0):
@@ -487,7 +479,6 @@ class Gauss_ansatz_net(nn.Module):
         return score_vecs
 
 
-
 def test_lowrank_score_correct(n_components = 5, npnts = 40):
     # test low rank version
     ndim = 2
@@ -536,6 +527,134 @@ def test_lowrank_gauss_score_correct(n_components = 1, npnts = 40, ndim = 3,
 
     assert torch.allclose(score_lowrank, score_gauss, atol=1e-4, rtol=1e-4)
 
+
+#%% Evaluation score functions with denoising loss. 
+def denoise_loss_fn(model, x, marginal_prob_std_f, eps=1e-5):
+  """The loss function for training score-based generative models.
+
+  Args:
+    model: A PyTorch model instance that represents a
+      time-dependent score-based model.
+    x: A mini-batch of training data.
+    marginal_prob_std: A function that gives the standard deviation of
+      the perturbation kernel.
+    eps: A tolerance value for numerical stability, sample t uniformly from [eps, 1.0]
+  """
+  random_t = torch.rand(x.shape[0], device=x.device) * (1. - eps) + eps
+  z = torch.randn_like(x)
+  std = marginal_prob_std_f(random_t,)
+  perturbed_x = x + z * std[:, None]
+  score = model(perturbed_x, random_t)
+  loss = torch.mean(torch.sum((score * std[:, None] + z)**2, dim=(1)))
+  return loss
+
+
+def denoise_loss_fn_fixt(model, x, marginal_prob_std_f, t):
+  """The loss function for individual time t. 
+  Used for evaluating the score model at a fixed time t.
+
+  Args:
+    model: A PyTorch model instance that represents a
+      time-dependent score-based model.
+    x: A mini-batch of training data.
+    marginal_prob_std: A function that gives the standard deviation of
+      the perturbation kernel.
+    t: Time, scalar in [eps, 1], note that t=0 is not numerically stable.
+  """
+  fix_t = torch.ones(x.shape[0], device=x.device) * t
+  z = torch.randn_like(x)
+  std = marginal_prob_std_f(fix_t,)
+  perturbed_x = x + z * std[:, None]
+  score = model(perturbed_x, fix_t)
+  loss = torch.mean(torch.sum((score * std[:, None] + z)**2, dim=(1)))
+  return loss
+
+
+
+def eval_score_td(X_train_tsr, score_model_td,
+                   sigma=25,
+                   nepochs=20,
+                   eps=1E-3,
+                   batch_size=None,
+                   device="cpu",):
+    ndim = X_train_tsr.shape[1]
+    score_model_td.to(device)
+    X_train_tsr = X_train_tsr.to(device)
+    marginal_prob_std_f = lambda t: marginal_prob_std(t, sigma)
+    pbar = trange(nepochs)
+    score_model_td.eval()
+    loss_traj = []
+    for ep in pbar:
+        if batch_size is None:
+            with torch.no_grad():
+                loss = denoise_loss_fn(score_model_td, X_train_tsr, marginal_prob_std_f, eps=eps)
+        else:
+            idx = torch.randint(0, X_train_tsr.shape[0], (batch_size,))
+            with torch.no_grad():
+                loss = denoise_loss_fn(score_model_td, X_train_tsr[idx], marginal_prob_std_f, eps=eps)
+
+        pbar.set_description(f"step {ep} loss {loss.item():.3f}")
+        loss_traj.append(loss.item())
+    return loss_traj
+
+
+def eval_score_td_fixt(X_train_tsr, score_model_td, time, 
+                    sigma=25,
+                    nepochs=20,
+                    batch_size=None,
+                    device="cpu",):
+      assert time > 0 
+      ndim = X_train_tsr.shape[1]
+      score_model_td.to(device)
+      X_train_tsr = X_train_tsr.to(device)
+      marginal_prob_std_f = lambda t: marginal_prob_std(t, sigma)
+      pbar = trange(nepochs)
+      score_model_td.eval()
+      loss_traj = []
+      for ep in pbar:
+          if batch_size is None:
+              with torch.no_grad():
+                  loss = denoise_loss_fn_fixt(score_model_td, X_train_tsr, marginal_prob_std_f, time)
+          else:
+              idx = torch.randint(0, X_train_tsr.shape[0], (batch_size,))
+              with torch.no_grad():
+                  loss = denoise_loss_fn_fixt(score_model_td, X_train_tsr[idx], marginal_prob_std_f, time)
+  
+          pbar.set_description(f"step {ep} loss {loss.item():.3f}")
+          loss_traj.append(loss.item())
+      return loss_traj
+  
+  
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def eval_score_model(Xtrain_norm, score_model, Nbatch=100, batch_size=2048, sigma_max=10, device="cuda"):
+    loss_traj = eval_score_td(Xtrain_norm, 
+            score_model, nepochs=Nbatch, batch_size=batch_size, 
+            sigma=sigma_max, device=device) # clipnorm=1,
+    # 50 full Gaussian GMM with Kmeans mean + cov initialization => 72 loss
+    Nparameters = count_parameters(score_model)
+    print (f"Average loss {np.mean(loss_traj):.3f}  ({batch_size}x{Nbatch} pnts)")
+    print("Num of parameters", count_parameters(score_model))
+    return np.mean(loss_traj), Nparameters
+
+
+def eval_score_model_splittime(Xtrain_norm, score_model, time_pnts, Nbatch=100, batch_size=2048, sigma_max=10, device="cuda"):
+    loss_time_arr = []
+    for time in time_pnts:
+        print(f"Time {time:.3f}")
+        loss_traj = eval_score_td_fixt(Xtrain_norm, score_model, time, 
+                nepochs=Nbatch, batch_size=batch_size, 
+                sigma=sigma_max, device=device) # clipnorm=1,
+        avg_loss = np.mean(loss_traj)
+        loss_time_arr.append(avg_loss)
+        print (f"t={time:.3f} Average loss {avg_loss:.3f}  ({batch_size}x{Nbatch} pnts)")
+    # 50 full Gaussian GMM with Kmeans mean + cov initialization => 72 loss
+    Nparameters = count_parameters(score_model)
+    print("Num of parameters", count_parameters(score_model))
+    return loss_time_arr, Nparameters
+#%%
 if __name__ == "__main__":
     test_lowrank_score_correct()
     test_lowrank_gauss_score_correct()

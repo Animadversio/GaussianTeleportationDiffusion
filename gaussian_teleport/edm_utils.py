@@ -2,11 +2,11 @@ import re
 import pandas as pd
 import torch
 import sys
+sys.path.append("../")
 from easydict import EasyDict as edict
 
 def create_edm(path, config, device="cuda"):
-    sys.path.append("../")
-    from mini_edm.train_edm import create_model, EDM # TODO: fix the import
+    from gaussian_teleport.edm.train_edm import create_model, EDM
     model = create_model(config)
     if path is not None:
         model.load_state_dict(torch.load(path))

@@ -14,13 +14,11 @@ import pickle as pkl
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# from core.edm_utils import edm_sampler
-# from train_edm import create_model, edm_sampler
 from collections import defaultdict
 from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
 from gaussian_teleport.edm_utils import edm_sampler
-from edm.dataset import ImageFolderDataset
+from gaussian_teleport.edm.dataset import ImageFolderDataset
 
 
 from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score

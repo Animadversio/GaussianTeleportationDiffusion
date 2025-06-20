@@ -13,8 +13,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 from torchvision.utils import save_image
-from train_edm import edm_sampler, EDM, create_model
+from mini_edm.train_edm import edm_sampler, EDM, create_model
 from gaussian_teleport.edm_utils import get_default_config, create_edm
+from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from gaussian_teleport.analytical_score_lib import explained_var_vec
+from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
+from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
+from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -123,12 +129,6 @@ def test_project_numerical(edm_Xmat):
 test_project_numerical(None)
 # %% [markdown]
 # ### Visualization pipeline function
-from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from gaussian_teleport.analytical_score_lib import explained_var_vec
-from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
-    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
-from gaussian_teleport.utils.plot_utils import saveallforms
 
 def score_slice_projection(anchors, edm, edm_Xmean, edm_Xcov, edm_imgshape,
                            sigmas=[0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0], titlestr="",

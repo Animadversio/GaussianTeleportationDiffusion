@@ -11,10 +11,14 @@ sys.path.append("/n/home12/binxuwang/Github/mini_edm")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from torchvision.utils import make_grid
-from torchvision.utils import save_image
-from train_edm import edm_sampler, EDM, create_model
-from core.edm_utils import get_default_config, create_edm
+from torchvision.utils import make_grid, save_image
+from gaussian_teleport.edm_utils import get_default_config, create_edm, edm_sampler, EDM, create_model
+from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from gaussian_teleport.analytical_score_lib import explained_var_vec
+from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
+from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
+from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -123,12 +127,6 @@ def test_project_numerical(edm_Xmat):
 test_project_numerical(None)
 # %% [markdown]
 # ### Visualization pipeline function
-from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from core.analytical_score_lib import explained_var_vec
-from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
-    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
-from core.utils.plot_utils import saveallforms
 
 def score_slice_projection(anchors, edm, edm_Xmean, edm_Xcov, edm_imgshape,
                            sigmas=[0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0], titlestr="",
@@ -359,7 +357,8 @@ def score_magnitude_projection_functional(anchors, score_func_col, score_name2pl
         if savefig: saveallforms(figsumdir, f"score_magnitude_map_{savestr}_{magnitude}_sigma_{sigma}")
         plt.show()
 #%%
-figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
+rootdir = "../"
+figroot = join(rootdir, "Figures")
 figsumdir = join(figroot, "score_vector_field_vis")
 os.makedirs(figsumdir, exist_ok=True)
 
@@ -478,13 +477,6 @@ for n_clusters in n_clusters_list:
     score_func_col[f"gmm_{n_clusters}_mode"] = lambda Xt, sigma, nc=n_clusters: \
         gaussian_mixture_score_batch_sigma_torch(Xt, mus_col[nc].cuda(),
                 Us_col[nc].cuda(), Lambdas_col[nc].cuda()+ sigma**2, weights_col[nc].cuda(), ).cpu()
-# score_func_col["gmm_5_mode"] = lambda Xt, sigma: \
-#     gaussian_mixture_score_batch_sigma_torch(Xt, mus_col[5].cuda(),
-#             Us_col[5].cuda(), Lambdas_col[5].cuda()+ sigma**2, weights_col[5].cuda(), ).cpu()
-# this won't work
-# gaussian_mixture_score_batch_sigma_torch(Xt, 
-#                 mus_col[n_clusters].cuda(), Us_col[n_clusters].cuda(), Lambdas_col[n_clusters].cuda() + sigma**2, 
-#                 weights=weights_col[n_clusters].cuda()).cpu()
 #%%
 def edm_score_func(Xt, sigma, edm):
     edm_Dt = edm(Xt.view(-1, *edm_imgshape), torch.tensor(sigma), None, use_ema=False).detach()

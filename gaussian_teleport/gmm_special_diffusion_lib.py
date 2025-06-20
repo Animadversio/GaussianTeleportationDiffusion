@@ -1,5 +1,14 @@
+"""
+This file contains the code for the special case of GMM diffusion, where the GMM is a delta function.
+It contains functions to compute the density, log probability, and scores of the GMM, and the analytical solution for the reverse diffusion process.
+The main function demo the reverse diffusion process of a delta mixture model.
+"""
+import math
+import torch
+import torch.nn.functional as F
 import numpy as np
 from scipy.special import softmax, logsumexp
+from scipy.integrate import solve_ivp
 
 def GMM_density(mus, sigma, x):
     """
@@ -44,6 +53,40 @@ def GMM_scores(mus, sigma, x):
     dist2 = np.sum(res ** 2, axis=-1)  # [x batch, mu]
     participance = softmax(- dist2 / sigma2 / 2, axis=1)  # [x batch, mu]
     scores = - np.einsum("ij,ijk->ik", participance, res) / sigma2   # [x batch, space dim]
+    return scores
+
+
+def GMM_density_torch(mus, sigma, x):
+    Nbranch = mus.shape[0]
+    Ndim = mus.shape[1]
+    sigma = torch.tensor(sigma)
+    sigma2 = sigma**2
+    normfactor = math.sqrt((2 * torch.pi * sigma)**Ndim)
+    res = x[:, None, :] - mus[None, :, :]  # [x batch, mu, space dim]
+    dist2 = torch.sum(res ** 2, dim=-1)  # [x batch, mu]
+    prob = torch.exp(- dist2 / sigma2 / 2)  # [x batch, mu]
+    prob_all = torch.sum(prob, dim=1) / Nbranch / normfactor  # [x batch,]
+    return prob_all
+
+
+def GMM_logprob_torch(mus, sigma, x):
+    Nbranch = mus.shape[0]
+    Ndim = mus.shape[1]
+    sigma2 = sigma ** 2
+    normfactor = math.sqrt((2 * torch.pi * sigma) ** Ndim)
+    res = x[:, None, :] - mus[None, :, :]  # [x batch, mu, space dim]
+    dist2 = torch.sum(res ** 2, dim=-1)  # [x batch, mu]
+    logprob = torch.logsumexp(- dist2 / sigma2 / 2, dim=1)
+    logprob -= torch.log(torch.tensor(Nbranch)) + math.log(normfactor)
+    return logprob
+
+
+def GMM_scores_torch(mus, sigma, x):
+    sigma2 = sigma**2
+    res = x[:, None, :] - mus[None, :, :]  # [x batch, mu, space dim]
+    dist2 = torch.sum(res ** 2, dim=-1)  # [x batch, mu]
+    participance = F.softmax(- dist2 / sigma2 / 2, dim=1)  # [x batch, mu]
+    scores = - torch.einsum("ij,ijk->ik", participance, res) / sigma2  # [x batch, space dim]
     return scores
 
 
@@ -101,7 +144,6 @@ def f_VP_noise_vec(t, x, mus, sigma=1E-6, noise_std=0.01):
     return - beta_t * (x + GMM_scores(alpha_t * mus, np.sqrt(sigma_t_sq), x.T).T + noise_std * np.random.randn(*x.shape))
 
 
-from scipy.integrate import solve_ivp
 def exact_delta_gmm_reverse_diff(mus, sigma, xT, t_eval=None, alpha_fun=alpha, beta_fun=beta):
     sol = solve_ivp(lambda t, x: f_VP_vec(t, x, mus, sigma=sigma, alpha_fun=alpha_fun, beta_fun=beta_fun),
                     (1, 0), xT, method="RK45",

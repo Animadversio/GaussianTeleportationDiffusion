@@ -1,3 +1,9 @@
+"""
+This script is used to visualize the approximation error of EDM score by GMM score. 
+At various training steps and with different number of modes and components. 
+It assumes the computation has been done and the results are stored in the csv files.
+with the key plotting function `visualize_train_run_score_cmp`.
+"""
 # %% [markdown]
 # ## GMM vs EDM 
 # %%
@@ -9,26 +15,17 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from torchvision.utils import make_grid, save_image
-# from core.gmm_special_dynamics import alpha
-sys.path.append("/n/home12/binxuwang/Github/mini_edm")
-sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
-# from train_edm import edm_sampler, EDM, create_model
-# from core.edm_utils import get_default_config, create_edm
-from core.utils.plot_utils import saveallforms
+sys.path.append("../")
+from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-# %%
-figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
-figsumdir = join(figroot, "GMM_EDM_training_summary")
-os.makedirs(figsumdir, exist_ok=True)
 #%%
 from matplotlib.ticker import ScalarFormatter
 epochfmt = ScalarFormatter()
-epochfmt.set_powerlimits((-3,4))  # Or whatever your limits are . . .
+epochfmt.set_powerlimits((-3,4))  # Or whatever the limits are . . .
 def visualize_train_run_score_cmp(df_syn, plot_var="St_residual", palette="turbo", 
              hue_order=["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
                         "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"], 
@@ -82,12 +79,19 @@ def visualize_train_run_score_cmp(df_syn, plot_var="St_residual", palette="turbo
     return figh, axs
 
 
+# %%
+rootdir = "../" # e.g. "/Users/binxuwang/Github/GaussianTeleportationDiffusion"
+tabdir = join(rootdir, "Tables")
+figroot = join(rootdir, "Figures")
+figsumdir = join(figroot, "GMM_EDM_training_summary")
+os.makedirs(figsumdir, exist_ok=True)
+
+# %%
 # %% [markdown]
 # ### MNIST EDM training process vs GMM scores
 # %% [markdown]
 # #### Early Phase MNIST
-ckptdir = r"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/mini_edm/exps/base_mnist_20240130-2207/checkpoints/"
-df_syn_mnst = pd.read_csv(join(ckptdir, "..", "MNIST_edm_25k_epoch_gmm_exp_var.csv"))
+df_syn_mnst = pd.read_csv(join(tabdir, "MNIST_edm_25k_epoch_gmm_exp_var.csv"))
 df_syn_mnst.name.unique()
 mnist_score_names = ["mean isotropic", "gaussian", 'gmm_2_mode', 
                 'gmm_5_mode', 'gmm_10_mode', 'gmm_20_mode', 'gmm_50_mode', 
@@ -105,8 +109,7 @@ visualize_train_run_score_cmp(df_syn_mnst, plot_var="Dt_residual",
 
 # %% [markdown]
 # #### Late Phase MNIST
-ckptdir = r"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/mini_edm/exps/base_mnist_20240129-1342/checkpoints/"
-df_syn_mnst_lt = pd.read_csv(join(ckptdir, "..", "MNIST_edm_1000k_epoch_gmm_exp_var.csv"))
+df_syn_mnst_lt = pd.read_csv(join(tabdir, "MNIST_edm_1000k_epoch_gmm_exp_var.csv"))
 
 mnist_score_names = ["mean isotropic", "gaussian", 'gmm_2_mode', 
                 'gmm_5_mode', 'gmm_10_mode', 'gmm_20_mode', 'gmm_50_mode', 
@@ -128,8 +131,7 @@ visualize_train_run_score_cmp(df_syn_mnst_lt, plot_var="Dt_residual",
 
 # %% [markdown]
 # #### CIFAR Early phase ckpt stats
-ckptdir = r"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/mini_edm/exps/base_cifar10_20240130-2317/checkpoints"
-df_syn_cf = pd.read_csv(join(ckptdir, "..", "edm_50k_epoch_gmm_exp_var.csv"))
+df_syn_cf = pd.read_csv(join(tabdir, "edm_50k_epoch_gmm_exp_var.csv"))
 # df_syn_cf.sigma.unique()
 cifar_score_names = ["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
                        "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"]
@@ -145,8 +147,7 @@ visualize_train_run_score_cmp(df_syn_cf, plot_var="Dt_residual",
 
 # %% [markdown]
 # #### Late phase ckpt CIFAR10
-ckptdir = r"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/mini_edm/exps/base_cifar10_20240130-2318/checkpoints"
-df_syn_cf_lt = pd.read_csv(join(ckptdir, "..", "edm_365k_epoch_gmm_exp_var.csv"))
+df_syn_cf_lt = pd.read_csv(join(tabdir, "edm_365k_epoch_gmm_exp_var.csv"))
 # df_syn_cf.sigma.unique()
 cifar_score_names = ["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
                        "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"]
@@ -162,7 +163,6 @@ visualize_train_run_score_cmp(df_syn_cf_lt, plot_var="Dt_residual",
 
 # %% [markdown]
 # ### CIFAR EDM trained early
-tabdir = r"/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
 df_syn_cifar2 = pd.read_csv(join(tabdir, "cifar10_uncond_edm_5k_epoch_gmm_exp_var.csv"))
 cifar_score_names = ["mean_isotropic", "gaussian", 'gmm_2_mode', 'gmm_5_mode', 'gmm_10_mode', 
                      'gmm_20_mode', 'gmm_50_mode', 'gmm_100_mode', 'gmm_200_mode', "gmm delta"]
@@ -175,10 +175,8 @@ visualize_train_run_score_cmp(df_syn_cifar2, plot_var="Dt_residual",
                               train_run_name="CIFAR10 origin EDM 5k epochs early phase",
                               savename="cifar10_edm_gmm_denoiser_residual_ev_early_epochs");
 
-
 # %% [markdown]
 # ### CIFAR EDM trained Late, 50k epochs, Augmented
-tabdir = r"/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
 df_syn_cifar3 = pd.read_csv(join(tabdir, "cifar10_uncond_edm_Aug_50k_epoch_gmm_exp_var.csv"))
 cifar_score_names = ["mean_isotropic", "gaussian", 'gmm_2_mode', 'gmm_5_mode', 'gmm_10_mode', 
                      'gmm_20_mode', 'gmm_50_mode', 'gmm_100_mode', 'gmm_200_mode', "gmm delta"]
@@ -192,7 +190,6 @@ visualize_train_run_score_cmp(df_syn_cifar3, plot_var="Dt_residual",
                               savename="cifar10_edm_Aug_gmm_denoiser_residual_ev_late_epochs");
 #%%
 # ### CIFAR EDM trained late, 50k epochs no Augmentation
-tabdir = r"/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
 df_syn_cifar4 = pd.read_csv(join(tabdir, "cifar10_uncond_edm_noAug_50k_epoch_gmm_exp_var.csv"))
 cifar_score_names = ["mean_isotropic", "gaussian", 'gmm_2_mode', 'gmm_5_mode', 'gmm_10_mode', 
                      'gmm_20_mode', 'gmm_50_mode', 'gmm_100_mode', 'gmm_200_mode', "gmm delta"]
@@ -262,52 +259,3 @@ visualize_train_run_score_cmp(df_syn_ffhq_lt, plot_var="Dt_residual",
                                 train_run_name="FFHQ origin EDM 35k epochs late phase",
                                 savename="ffhq_edm_gmm_denoiser_residual_ev_late_epochs");
 
-
-# %%
-
-
-
-
-
-
-
-
-# %%
-sigma = 0.01
-plt.figure(figsize=(7, 7))
-sns.lineplot(data=df_syn_cf[(df_syn_cf.sigma == sigma) & (df_syn_cf.epoch > 0) & (df_syn.epoch < 2E4)], 
-            x="epoch", y="St_residual", palette="RdYlBu", hue="name", lw=2.5, alpha=0.8,
-            hue_order=["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
-                       "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"])
-# TODO: add the shaded errorbar from `St_EV_std`
-plt.yscale("log")
-plt.ylim(None, 1.5)
-plt.title(f"Residual explained variance of score | sigma={sigma}", fontsize=16)
-saveallforms(figsumdir, "cifar10_mini_edm_gmm_score_residual_ev_initial_epochs_sigma001")
-plt.show()
-
-# %%
-sigma = 0.02
-plt.figure(figsize=(7, 7))
-sns.lineplot(data=df_syn_cf_lt[(df_syn_cf_lt.sigma == sigma) & (df_syn_cf_lt.epoch > 0)], 
-            x="epoch", y="St_residual", palette="RdYlBu", hue="name", lw=2.5, alpha=0.8,
-            hue_order=["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
-                       "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"])
-# TODO: add the shaded errorbar from `St_EV_std`
-plt.yscale("log")
-plt.ylim(None, 1.0)
-plt.title(f"Residual explained variance of score \n sigma={sigma} (late training)", fontsize=16)
-plt.show()
-
-# %%
-sigma = 0.05
-plt.figure(figsize=(7, 7))
-sns.lineplot(data=df_syn_cf_lt[(df_syn_cf_lt.sigma == sigma) & (df_syn_cf_lt.epoch > 0)], 
-            x="epoch", y="St_residual", palette="RdYlBu", hue="name", lw=2.5, alpha=0.8,
-            hue_order=["mean isotropic", "gaussian", "gmm_2_mode", "gmm_5_mode", 
-                       "gmm_10_mode", "gmm_20_mode", "gmm_50_mode", "gmm_100_mode", "gmm delta"])
-# TODO: add the shaded errorbar from `St_EV_std`
-plt.yscale("log")
-plt.ylim(None, 1.0)
-plt.title(f"Residual explained variance of score \n sigma={sigma} (late training)", fontsize=16)
-plt.show()

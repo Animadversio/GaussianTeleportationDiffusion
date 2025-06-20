@@ -1,13 +1,14 @@
 
 #%%
 import sys
-sys.path.append("..")
 from os.path import join
-from core.utils.plot_utils import saveallforms
-from core.utils.montage_utils import crop_all_from_montage, make_grid_np
 import matplotlib.pyplot as plt
 import torch 
 import numpy as np
+import json
+sys.path.append("../")
+from gaussian_teleport.utils.plot_utils import saveallforms
+from gaussian_teleport.utils.montage_utils import crop_all_from_montage, make_grid_np
 
 def compute_sigma_steps(num_steps=40, sigma_min=0.002, sigma_max=80, rho=7, device="cpu"):
     # Adjust noise levels based on what's supported by the network.
@@ -36,12 +37,4 @@ for label in labels:
     # plt.imshow(new_mtg)
     # plt.show()
 t_steps = compute_sigma_steps()
-import json
-json.dump([t_steps[i].item() for i in idxs], 
-          open(join(imgdir, "t_steps.json"), "w"))
-    
-#%%
-
-t_steps = compute_sigma_steps()
-
-# %%
+json.dump([t_steps[i].item() for i in idxs], open(join(imgdir, "t_steps.json"), "w"))

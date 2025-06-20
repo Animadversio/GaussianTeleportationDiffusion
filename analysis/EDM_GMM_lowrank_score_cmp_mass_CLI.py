@@ -1,8 +1,8 @@
 import sys
-sys.path.append("/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm")
-# torch_utils is needed from this path. 
-sys.path.append("/n/home12/binxuwang/Github/mini_edm")
-sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
+# sys.path.append("/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm")
+# # torch_utils is needed from this path. 
+# sys.path.append("/n/home12/binxuwang/Github/mini_edm")
+sys.path.append("../")
 import json
 from tqdm import tqdm, trange
 import re 
@@ -14,17 +14,19 @@ import pickle as pkl
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# from core.edm_utils import edm_sampler
-# from train_edm import create_model, edm_sampler
 from collections import defaultdict
 from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
-from generate import edm_sampler
-from training.dataset import ImageFolderDataset
+from gaussian_teleport.edm_utils import edm_sampler
+from gaussian_teleport.edm.dataset import ImageFolderDataset
+from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from gaussian_teleport.analytical_score_lib import explained_var_vec
+from gaussian_teleport.analytical_score_lib import sample_Xt_batch
+from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
 
-tabdir = "/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
+#%%
 train_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/training-runs"
-pretrain_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/pretrained"
 def load_edm_model(ckptdir, ckpt_idx=-1, train_root=train_root, return_epoch=False):
     ckpt_list = glob.glob(join(train_root, ckptdir, "*.pkl"))
     ckpt_list = sorted(ckpt_list)
@@ -50,8 +52,11 @@ def load_stats(ckptdir, train_root=train_root):
 
 #%%
 device = 'cuda'
+rootdir = "../"
+tabdir = join(rootdir, "Tables")
 dataroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/datasets"
-
+pretrain_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/pretrained"
+#%% Configurations
 # dataset_name = "ffhq"
 # train_run_name = "FFHQ_edm_35k"
 # ckptname = "00020-ffhq-64x64-uncond-ddpmpp-edm-gpus4-batch256-fp32"
@@ -63,12 +68,11 @@ dataroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/datasets
 # n_clusters_list = [1, 2, 5, 10, 20, ]
 
 dataset_name = "cifar10"
-train_run_name = "cifar10_uncond_edm_vp_pretrained"
 # ckptname = "00032-cifar10-32x32-uncond-ddpmpp-edm-gpus4-batch256-fp32"
+train_run_name = "cifar10_uncond_edm_vp_pretrained"
 ckpt_path = join(pretrain_root, "edm-cifar10-32x32-uncond-vp.pkl")
 n_clusters_list = [1, 2, 5, 10, 20, 50, 100, 200]
 n_rank_list = [8, 16, 32, 64, 96, 128, 256, 384, 512, 768, 1024, 2048, 3072]
-
 sigma_list = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.75, 1.0, 1.5, 2.0, 5.0, 10.0, 20.0, 30.0, 40.0, 80.0]
 #%%
 if dataset_name == "ffhq":
@@ -94,12 +98,6 @@ eigvecs = eigvecs.flip(1)
 edm_imgshape = Xtsr.shape[1:]
 edm_std_mean = (torch.trace(edm_Xcov) / edm_Xcov.shape[0]).sqrt()
 #%%
-from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from core.analytical_score_lib import explained_var_vec
-from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
-    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
-
 print("Computing GMM clusters")
 kmeans_batch = 2048
 kmeans_random_seed = 42
@@ -141,10 +139,10 @@ print("Explaining EDM score with GMM and other analytical scores")
 df_col = []
 
 epoch = 400000
+# print(f"ckpt_idx={ckpt_idx}, epoch={epoch}")
 with open(ckpt_path, 'rb') as f:
     edm = pkl.load(f)['ema'].to(device)
 edm.to(device).eval();
-# print(f"ckpt_idx={ckpt_idx}, epoch={epoch}")
 for sigma in sigma_list:
     Xt_col = []
     score_vec_col = defaultdict(list)
@@ -158,12 +156,7 @@ for sigma in sigma_list:
         Xt_col.append(Xt.cpu())
         for score_name, analy_score_func in score_func_col.items():
             score_vec_col[score_name].append(analy_score_func(Xt, sigma))
-        # for n_clusters in reversed(n_clusters_list): #  50, 100, 
-        #     gmm_scores = gaussian_mixture_score_batch_sigma_torch(Xt, 
-        #         mus_col[n_clusters].cuda(), Us_col[n_clusters].cuda(), Lambdas_col[n_clusters].cuda() + sigma**2, 
-        #         weights=weights_col[n_clusters].cuda()).cpu()
-        #     score_vec_col[f"gmm_{n_clusters}_mode"].append(gmm_scores)
-        #     torch.cuda.empty_cache()
+        
         for n_clusters in tqdm(reversed(n_clusters_list)):
             mus = mus_col[n_clusters] # (n_clusters, D)
             Us = Us_col[n_clusters] # (n_clusters, D, D)

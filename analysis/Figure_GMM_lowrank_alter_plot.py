@@ -1,4 +1,11 @@
 
+"""
+This script is used to visualize the approximation error of EDM score by GMM score. 
+As a function of the rank of the GMM and the number of modes, focusing on the MNIST and CIFAR10 datasets.
+It assumes the computation has been done and the results are stored in the csv files in the `Tables` directory.
+It plot it in a different way than the previous script, focusing on the contribution of 
+the number of modes beyond the Gaussian score, and the minimal required rank to achieve a certain level of approximation.
+"""
 #%%
 # %load_ext autoreload
 # %autoreload 2
@@ -11,31 +18,16 @@ from tqdm import tqdm, trange
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
+import matplotlib.colors as mcolors
 import seaborn as sns
-from torchvision.utils import make_grid, save_image
-# from core.gmm_special_dynamics import alpha
-sys.path.append("/n/home12/binxuwang/Github/mini_edm")
-sys.path.append("/n/home12/binxuwang/Github/DiffusionMemorization")
-# from train_edm import edm_sampler, EDM, create_model
-# from core.edm_utils import get_default_config, create_edm
-from core.utils.plot_utils import saveallforms
+sys.path.append("../")
+from gaussian_teleport.utils.plot_utils import saveallforms
 # set pandas display
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
-
-figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
-figsumdir = join(figroot, "GMM_lowrk_approx_summary")
-os.makedirs(figsumdir, exist_ok=True)
-
 #%%
-from matplotlib.ticker import MaxNLocator
-import matplotlib.colors as mcolors
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-
-
 def extract_res_mats(df_gmm_rk, varname="St_residual", 
                      n_clusters_list=None, n_rank_list=None, 
                      sigmas=None, ):
@@ -288,10 +280,16 @@ def visualize_gmm_lowrank_residual_heatmap_separate(res_mats,
         plt.show()
     return
 
+#%%
+rootdir = "../" # e.g. "/Users/binxuwang/Github/GaussianTeleportationDiffusion"
+tabdir = join(rootdir, "Tables")
+figroot = join(rootdir, "Figures") # can be changed to any other directory
+figsumdir = join(figroot, "GMM_lowrk_approx_summary")
+os.makedirs(figsumdir, exist_ok=True)
+
 # %% [markdown]
 # ### MNIST score with varying rank and components
-ckptdir = r"/n/holylfs06/LABS/kempner_fellow_binxuwang/Users/binxuwang/DL_Projects/mini_edm/exps/base_mnist_20240129-1342/checkpoints/"
-df_gmm_rk = pd.read_csv(join(ckptdir, "..", "MNIST_edm_1000k_epoch_gmm_exp_var_gmm_rk.csv"))
+df_gmm_rk = pd.read_csv(join(tabdir, "MNIST_edm_1000k_epoch_gmm_exp_var_gmm_rk.csv"))
 model_name = "MNIST_miniEDM"
 # preprocess the dataframe to extact the rank and components
 df_gmm_rk["St_residual"] = 1 - df_gmm_rk["St_EV"]
@@ -371,50 +369,8 @@ ax.set_title(f"Minimal Rank (increase residual EV < {thresh_fraction})\n{model_n
 saveallforms(figsumdir, f"{model_name}_GMM_min_rank_{thresh_fraction}_across_sigma", figh, ["pdf", "png"])
 figh.show()
 #%%
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_rank", huevar="n_clusters", yvar="St_residual",
-#     runname="MNIST mini EDM",
-#     savename="MNIST_miniEDM_GMM_lowrank_score_residual_x_nrank_hue_ncomp",);
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_clusters", huevar="n_rank", yvar="St_residual", 
-#     runname="MNIST mini EDM",
-#     savename="MNIST_miniEDM_GMM_lowrank_score_residual_x_ncomp_hue_nrank",);
-# visualize_gmm_lowrank_residual_heatmap_separate(res_mat_score,
-#         xvar="n_rank", yvar="n_clusters", plotvar="St_residual",
-#         runname="MNIST mini EDM",
-#         savename="MNIST_miniEDM_GMM_lowrank_score_residual_heatmap",);
-# #%%
-# res_mat_score, _ = extract_res_mats(df_gmm_rk, varname="St_residual",)
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_rank", huevar="n_clusters", yvar="St_residual",
-#     sigmas=[1.5e+00, 2.0e+00, 5.0e+00, 1.0e+01, 2.0e+01, 3.0e+01,
-#        4.0e+01, 8.0e+01], nrowcols=(2, 4),figsize=(19, 8),
-#     runname="MNIST mini EDM",
-#     savename="MNIST_miniEDM_GMM_lowrank_score_residual_x_nrank_hue_ncomp_largesigma",);
-
-# #%%
-# res_mat_Dt, _ = extract_res_mats(df_gmm_rk, varname="Dt_residual",)
-# visualize_gmm_lowrank_residual(res_mat_Dt, 
-#     xvar="n_rank", huevar="n_clusters", yvar="Dt_residual",
-#     runname="MNIST mini EDM",
-#     savename="MNIST_miniEDM_GMM_lowrank_denoiser_residual_x_nrank_hue_ncomp",);
-# visualize_gmm_lowrank_residual(res_mat_Dt, 
-#     xvar="n_clusters", huevar="n_rank", yvar="Dt_residual", 
-#     runname="MNIST mini EDM",
-#     savename="MNIST_miniEDM_GMM_lowrank_denoiser_residual_x_ncomp_hue_nrank",);
-# visualize_gmm_lowrank_residual_heatmap_separate(res_mat_Dt,
-#         xvar="n_rank", yvar="n_clusters", plotvar="Dt_residual",
-#         runname="MNIST mini EDM",
-#         savename="MNIST_miniEDM_GMM_lowrank_denoiser_residual_heatmap",);
-
-
-
-
-
-
 #%% [markdown]
 # ### CIFAR10 score with varying rank and components
-tabdir = "/n/home12/binxuwang/Github/DiffusionMemorization/Tables"
 df_gmm_rk = pd.read_csv(join(tabdir, "cifar10_uncond_edm_vp_pretrained_epoch_gmm_exp_var_gmm_rk.csv"))
 model_name = "CIFAR10_uncond_EDM"
 # preprocess the dataframe to extact the rank and components
@@ -458,7 +414,6 @@ ax.set_title(f"Contribution of # of Mode beyond Gaussian\n{model_name}", fontsiz
 saveallforms(figsumdir, f"{model_name}_GMM_ncomp_contrib_across_sigma", figh, ["pdf", "png"])
 
 #%% Minimal required rank
-
 thresh_fraction = 1.1
 full_rank = df_gmm_rk.n_rank.max()
 # compute the minimal required rank 
@@ -498,54 +453,4 @@ ax.set_ylabel("Minimal Rank", fontsize=16)
 ax.set_title(f"Minimal Rank (increase residual EV < {thresh_fraction})\n{model_name}", fontsize=16)
 saveallforms(figsumdir, f"{model_name}_GMM_min_rank_{thresh_fraction}_across_sigma", figh, ["pdf", "png"])
 figh.show()
-#%%
 
-
-
-
-
-
-
-# #%%
-# res_mat_score, res_mat_score_pivot = extract_res_mats(df_gmm_rk, varname="St_residual",)
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_rank", huevar="n_clusters", yvar="St_residual",
-#     runname="CIFAR10 uncond EDM pretrained",
-#     savename="CIFAR_uncond_EDM_GMM_lowrank_score_residual_x_nrank_hue_ncomp",);
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_clusters", huevar="n_rank", yvar="St_residual", 
-#     runname="CIFAR10 uncond EDM pretrained",
-#     savename="CIFAR_uncond_EDM_GMM_lowrank_score_residual_x_ncomp_hue_nrank",);
-# visualize_gmm_lowrank_residual_heatmap_separate(res_mat_score,
-#         xvar="n_rank", yvar="n_clusters", plotvar="St_residual",
-#         runname="CIFAR10 uncond EDM pretrained",
-#         savename="CIFAR_uncond_GMM_lowrank_score_residual_heatmap",);
-# #%%
-# res_mat_score, _ = extract_res_mats(df_gmm_rk, varname="St_residual",)
-# visualize_gmm_lowrank_residual(res_mat_score, 
-#     xvar="n_rank", huevar="n_clusters", yvar="St_residual",
-#     sigmas=[1.5e+00, 2.0e+00, 5.0e+00, 1.0e+01, 2.0e+01, 3.0e+01,
-#        4.0e+01, 8.0e+01], nrowcols=(2, 4),figsize=(19, 8),
-#     runname="CIFAR10 uncond EDM pretrained",
-#     savename="CIFAR_uncond_GMM_lowrank_score_residual_x_nrank_hue_ncomp_largesigma",);
-
-# #%%
-# res_mat_Dt, res_mat_Dt_pivot = extract_res_mats(df_gmm_rk, varname="Dt_residual",)
-# visualize_gmm_lowrank_residual(res_mat_Dt, 
-#     xvar="n_rank", huevar="n_clusters", yvar="Dt_residual",
-#     runname="CIFAR10 uncond EDM pretrained",
-#     savename="CIFAR_uncond_GMM_lowrank_denoiser_residual_x_nrank_hue_ncomp",);
-# visualize_gmm_lowrank_residual(res_mat_Dt, 
-#     xvar="n_clusters", huevar="n_rank", yvar="Dt_residual", 
-#     runname="CIFAR10 uncond EDM pretrained",
-#     savename="CIFAR_uncond_GMM_lowrank_denoiser_residual_x_ncomp_hue_nrank",);
-# visualize_gmm_lowrank_residual_heatmap_separate(res_mat_Dt,
-#         xvar="n_rank", yvar="n_clusters", plotvar="Dt_residual",
-#         runname="CIFAR10 uncond EDM pretrained",
-#         savename="CIFAR_uncond_GMM_lowrank_denoiser_residual_heatmap",);   
-
-
- 
-
-
-#%%

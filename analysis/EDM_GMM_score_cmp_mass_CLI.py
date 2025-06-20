@@ -14,13 +14,18 @@ import pickle as pkl
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# from core.edm_utils import edm_sampler
-# from train_edm import create_model, edm_sampler
 from collections import defaultdict
 from torchvision.utils import make_grid, save_image
 from torchvision.transforms import ToPILImage
-from generate import edm_sampler
-from training.dataset import ImageFolderDataset
+from gaussian_teleport.edm_utils import edm_sampler
+from gaussian_teleport.edm.dataset import ImageFolderDataset
+
+
+from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
+from gaussian_teleport.analytical_score_lib import explained_var_vec
+from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
+from gaussian_teleport.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
+    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
 
 train_root = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/Github/edm/training-runs"
 def load_edm_model(ckptdir, ckpt_idx=-1, train_root=train_root, return_epoch=False):
@@ -101,11 +106,6 @@ eigvecs = eigvecs.flip(1)
 edm_imgshape = Xtsr.shape[1:]
 edm_std_mean = (torch.trace(edm_Xcov) / edm_Xcov.shape[0]).sqrt()
 
-from core.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
-from core.analytical_score_lib import explained_var_vec
-from core.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
-from core.gaussian_mixture_lib import gaussian_mixture_score_batch_sigma_torch, \
-    gaussian_mixture_lowrank_score_batch_sigma_torch, compute_cluster
 
 print("Computing GMM clusters")
 kmeans_batch = 2048

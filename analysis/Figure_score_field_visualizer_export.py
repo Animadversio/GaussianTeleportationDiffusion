@@ -11,10 +11,8 @@ sys.path.append("/n/home12/binxuwang/Github/mini_edm")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from torchvision.utils import make_grid
-from torchvision.utils import save_image
-from mini_edm.train_edm import edm_sampler, EDM, create_model
-from gaussian_teleport.edm_utils import get_default_config, create_edm
+from torchvision.utils import make_grid, save_image
+from gaussian_teleport.edm_utils import get_default_config, create_edm, edm_sampler, EDM, create_model
 from gaussian_teleport.analytical_score_lib import mean_isotropic_score, Gaussian_score, delta_GMM_score
 from gaussian_teleport.analytical_score_lib import explained_var_vec
 from gaussian_teleport.analytical_score_lib import sample_Xt_batch, sample_Xt_batch
@@ -359,7 +357,8 @@ def score_magnitude_projection_functional(anchors, score_func_col, score_name2pl
         if savefig: saveallforms(figsumdir, f"score_magnitude_map_{savestr}_{magnitude}_sigma_{sigma}")
         plt.show()
 #%%
-figroot = "/n/holylabs/LABS/kempner_fellows/Users/binxuwang/DL_Projects/DiffusionHiddenLinear"
+rootdir = "../"
+figroot = join(rootdir, "Figures")
 figsumdir = join(figroot, "score_vector_field_vis")
 os.makedirs(figsumdir, exist_ok=True)
 
@@ -478,13 +477,6 @@ for n_clusters in n_clusters_list:
     score_func_col[f"gmm_{n_clusters}_mode"] = lambda Xt, sigma, nc=n_clusters: \
         gaussian_mixture_score_batch_sigma_torch(Xt, mus_col[nc].cuda(),
                 Us_col[nc].cuda(), Lambdas_col[nc].cuda()+ sigma**2, weights_col[nc].cuda(), ).cpu()
-# score_func_col["gmm_5_mode"] = lambda Xt, sigma: \
-#     gaussian_mixture_score_batch_sigma_torch(Xt, mus_col[5].cuda(),
-#             Us_col[5].cuda(), Lambdas_col[5].cuda()+ sigma**2, weights_col[5].cuda(), ).cpu()
-# this won't work
-# gaussian_mixture_score_batch_sigma_torch(Xt, 
-#                 mus_col[n_clusters].cuda(), Us_col[n_clusters].cuda(), Lambdas_col[n_clusters].cuda() + sigma**2, 
-#                 weights=weights_col[n_clusters].cuda()).cpu()
 #%%
 def edm_score_func(Xt, sigma, edm):
     edm_Dt = edm(Xt.view(-1, *edm_imgshape), torch.tensor(sigma), None, use_ema=False).detach()

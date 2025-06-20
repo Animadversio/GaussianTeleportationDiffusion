@@ -49,6 +49,7 @@ We host the pre-computed mean and covariance matrices for common image datasets.
     - `edm` subfolder contains the simplified code to train diffusion models in EDM convention. The code is ported and adapted from [yuanzhi-zhu/mini_edm](https://github.com/yuanzhi-zhu/mini_edm) repo. The dataset loading code is ported and adapted from [NVlabs/edm](https://github.com/NVlabs/edm/blob/main/training/dataset.py)
 - `Tables` contains most of pre-computed tables, easy to reproduce figures or analysis in the paper. 
 - `notebooks` contains the demo for using our code and reproducing our analysis. 
+- `analysis` contains the main experimental analysis code and Figure plotting code. 
 
 
 ### Run benchmark experiments yourself

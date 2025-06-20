@@ -5,3 +5,7 @@
 *.pyw
 *.pywz
 
+__pycache__/
+*/__pycache__/
+datasets/*
+exp_runs/*

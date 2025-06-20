@@ -152,7 +152,17 @@ def create_model(config):
     return unet
     
 
-def train_edm_model(config, unet, img_dataset, logger, device):
+def train_edm_model(config, unet, img_dataset, device):
+    # setup logger
+    logging.basicConfig(filename=f'{config.outdir}/std.log', filemode='w', 
+                        format='%(asctime)s %(levelname)s --> %(message)s',
+                        level=logging.INFO,
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger()
+    
+    logger.info("#################### Arguments: ####################")
+    for arg in vars(config):
+        logger.info(f"\t{arg}: {getattr(config, arg)}")
     
     logger.info("#################### DataLoader: ####################")
     dataloader = torch.utils.data.DataLoader(img_dataset,
@@ -276,15 +286,6 @@ if __name__ == "__main__":
     config.outdir = outdir
     config.sample_dir = sample_dir
     config.ckpt_dir = ckpt_dir
-    
-    logging.basicConfig(filename=f'{outdir}/std.log', filemode='w', 
-                        format='%(asctime)s %(levelname)s --> %(message)s',
-                        level=logging.INFO,
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    logger = logging.getLogger()
-    logger.info("#################### Arguments: ####################")
-    for arg in vars(config):
-        logger.info(f"\t{arg}: {getattr(config, arg)}")
 
     ## set random seed everywhere
     torch.manual_seed(config.seed)
@@ -326,5 +327,4 @@ if __name__ == "__main__":
     ## init model
     unet = create_model(config)
     
-    train_edm_model(config, unet, img_dataset, logger, device)
-    
+    train_edm_model(config, unet, img_dataset, device)

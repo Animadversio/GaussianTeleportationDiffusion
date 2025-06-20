@@ -57,7 +57,7 @@ def edm_sampler(
 class EDM():
     def __init__(self, model=None, cfg=None):
         self.cfg = cfg
-        self.device = self.cfg.device
+        self.device = self.cfg.device if torch.cuda.is_available() else torch.device('cpu')
         self.model = model.to(self.device)
         self.ema = copy.deepcopy(self.model).eval().requires_grad_(False)
         ## parameters

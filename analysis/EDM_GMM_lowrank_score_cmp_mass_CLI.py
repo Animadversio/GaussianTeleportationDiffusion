@@ -139,10 +139,10 @@ print("Explaining EDM score with GMM and other analytical scores")
 df_col = []
 
 epoch = 400000
+# print(f"ckpt_idx={ckpt_idx}, epoch={epoch}")
 with open(ckpt_path, 'rb') as f:
     edm = pkl.load(f)['ema'].to(device)
 edm.to(device).eval();
-# print(f"ckpt_idx={ckpt_idx}, epoch={epoch}")
 for sigma in sigma_list:
     Xt_col = []
     score_vec_col = defaultdict(list)

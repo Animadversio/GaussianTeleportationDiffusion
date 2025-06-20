@@ -152,113 +152,23 @@ def create_model(config):
     return unet
     
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--expr", type=str, default="base")
-    parser.add_argument("--dataset", type=str, default="cifar")
-    parser.add_argument('--seed', default=42, type=int, help='global seed')
-    parser.add_argument("--train_batch_size", type=int, default=16)
-    parser.add_argument("--num_steps", type=int, default=200000)
-    parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--img_size", type=int, default=32)
-    parser.add_argument("--accumulation_steps", type=int, default=16)
-    parser.add_argument("--save_model_iters", type=int, default=5000)
-    parser.add_argument("--log_step", type=int, default=500)
-    parser.add_argument("--train_dataset", action='store_true', default=True)
-    parser.add_argument("--desired_class", type=str, default='all')
-    parser.add_argument("--train_progress_bar", action='store_true', default=False)
-    parser.add_argument("--warmup", type=int, default=5000)
-    # EDM models parameters
-    parser.add_argument('--gt_guide_type', default='l2', type=str, help='gt_guide_type loss type')
-    parser.add_argument('--sigma_min', default=0.002, type=float, help='sigma_min')
-    parser.add_argument('--sigma_max', default=80.0, type=float, help='sigma_max')
-    parser.add_argument('--rho', default=7., type=float, help='Schedule hyper-parameter')
-    parser.add_argument('--sigma_data', default=0.5, type=float, help='sigma_data used in EDM for c_skip and c_out')
-    # Sampling parameters
-    parser.add_argument('--total_steps', default=18, type=int, help='total_steps')
-    parser.add_argument("--save_images_step", type=int, default=1000)
-    parser.add_argument("--eval_batch_size", type=int, default=64)
-    # Model architecture
-    parser.add_argument('--model_channels', default=64, type=int, help='model_channels')
-    parser.add_argument('--channel_mult', default=[1,2,2,2], type=int, nargs='+', help='channel_mult')
-    parser.add_argument('--attn_resolutions', default=[], type=int, nargs='+', help='attn_resolutions')
-    parser.add_argument('--layers_per_block', default=4, type=int, help='num_blocks')
+def train_edm_model(config, unet, img_dataset, logger, device):
     
-    config = parser.parse_args()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    config.device = device
-    channels = {'mnist': 1, 'cifar10': 3}
-    config.channels = channels[config.dataset]
-
-    # workdir setup
-    config.expr = f"{config.expr}_{config.dataset}"
-    run_id = datetime.now().strftime("%Y%m%d-%H%M")
-    outdir = f"exps/{config.expr}_{run_id}"
-    os.makedirs(outdir, exist_ok=True)
-    sample_dir = f"{outdir}/samples"
-    os.makedirs(sample_dir, exist_ok=True)
-    ckpt_dir = f"{outdir}/checkpoints"
-    os.makedirs(ckpt_dir, exist_ok=True)
-    logging.basicConfig(filename=f'{outdir}/std.log', filemode='w', 
-                        format='%(asctime)s %(levelname)s --> %(message)s',
-                        level=logging.INFO,
-                        datefmt='%Y-%m-%d %H:%M:%S')
-    logger = logging.getLogger()
-    logger.info("#################### Arguments: ####################")
-    for arg in vars(config):
-        logger.info(f"\t{arg}: {getattr(config, arg)}")
-
-    ## set random seed everywhere
-    torch.manual_seed(config.seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(config.seed)
-        torch.cuda.manual_seed_all(config.seed)  # for multi-GPU.
-    random.seed(config.seed)  # Python random module.
-    torch.manual_seed(config.seed)
-
-    ## load dataset
-    ### create dataloader
-    if config.dataset == 'mnist':
-        img_dataset = torchvision.datasets.MNIST(root='datasets/mnist', download=True, train=config.train_dataset,
-                                            transform=torchvision.transforms.Compose(
-                                                [torchvision.transforms.Resize(config.img_size),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize((0.5,), (0.5,))]
-                                            ),)
-        # mnist class labels
-        classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
-                    '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
-    elif config.dataset == 'cifar10':
-        img_dataset = torchvision.datasets.CIFAR10(root='datasets/cifar', download=True, train=config.train_dataset,
-                                            transform=torchvision.transforms.Compose(
-                                                [torchvision.transforms.Resize(config.img_size),
-                                                    torchvision.transforms.RandomHorizontalFlip(),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-                                            ),)
-        # CIFAR10 class labels
-        classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-    else:
-        raise NotImplementedError(f'dataset {config.dataset} not implemented')
-    # Filter the dataset to only keep desired_class images
-    if config.desired_class != 'all':
-        class_idx = classes.index(config.desired_class)
-        img_dataset = [(img, label) for img, label in img_dataset if label == class_idx]
+    logger.info("#################### DataLoader: ####################")
     dataloader = torch.utils.data.DataLoader(img_dataset,
-                                                batch_size=config.train_batch_size,
-                                                shuffle=True,
-                                                num_workers=0,
-                                                pin_memory=True)
+                                            batch_size=config.train_batch_size,
+                                            shuffle=True,
+                                            num_workers=0,
+                                            pin_memory=True)
     logger.info(f'length of dataloader: {len(dataloader)}')
-
-    ## init model
-    unet = create_model(config)
-    edm = EDM(model=unet, cfg=config)
+    if isinstance(unet, EDM):
+        edm = unet
+    else:
+        edm = EDM(model=unet, cfg=config)
     edm.model.train()
     logger.info("#################### Model: ####################")
     # logger.info(f'{unet}')
     logger.info(f'number of trainable parameters of phi model in optimizer: {sum(p.numel() for p in unet.parameters() if p.requires_grad)}')
-
     ## setup optimizer
     # optimizer = torch.optim.AdamW(edm.model.parameters(),lr=config.learning_rate)
     optimizer = torch.optim.Adam(edm.model.parameters(),lr=config.learning_rate)
@@ -307,9 +217,114 @@ if __name__ == "__main__":
             edm.model.eval()
             x_T = torch.randn([config.eval_batch_size, config.channels, config.img_size, config.img_size]).to(device).float()
             sample = edm_sampler(edm, x_T, num_steps=config.total_steps).detach().cpu()
-            save_image((sample/2+0.5).clamp(0, 1), f'{sample_dir}/image_{step}.png')
+            save_image((sample/2+0.5).clamp(0, 1), f'{config.sample_dir}/image_{step}.png')
             edm.model.train()
         ## save model
         if config.save_model_iters and (step % config.save_model_iters == 0 or step == config.num_steps - 1) and step > 0:
             # torch.save(edm.model.state_dict(), f"{ckpt_dir}/model_{step}.pth")
-            torch.save(edm.ema.state_dict(), f"{ckpt_dir}/ema_{step}.pth")
+            torch.save(edm.ema.state_dict(), f"{config.ckpt_dir}/ema_{step}.pth")
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--expr", type=str, default="base")
+    parser.add_argument("--dataset", type=str, default="cifar")
+    parser.add_argument('--seed', default=42, type=int, help='global seed')
+    parser.add_argument("--train_batch_size", type=int, default=16)
+    parser.add_argument("--num_steps", type=int, default=200000)
+    parser.add_argument("--learning_rate", type=float, default=1e-4)
+    parser.add_argument("--img_size", type=int, default=32)
+    parser.add_argument("--accumulation_steps", type=int, default=16)
+    parser.add_argument("--save_model_iters", type=int, default=5000)
+    parser.add_argument("--log_step", type=int, default=500)
+    parser.add_argument("--train_dataset", action='store_true', default=True)
+    parser.add_argument("--desired_class", type=str, default='all')
+    parser.add_argument("--train_progress_bar", action='store_true', default=False)
+    parser.add_argument("--warmup", type=int, default=5000)
+    # EDM models parameters
+    parser.add_argument('--gt_guide_type', default='l2', type=str, help='gt_guide_type loss type')
+    parser.add_argument('--sigma_min', default=0.002, type=float, help='sigma_min')
+    parser.add_argument('--sigma_max', default=80.0, type=float, help='sigma_max')
+    parser.add_argument('--rho', default=7., type=float, help='Schedule hyper-parameter')
+    parser.add_argument('--sigma_data', default=0.5, type=float, help='sigma_data used in EDM for c_skip and c_out')
+    # Sampling parameters
+    parser.add_argument('--total_steps', default=18, type=int, help='total_steps')
+    parser.add_argument("--save_images_step", type=int, default=1000)
+    parser.add_argument("--eval_batch_size", type=int, default=64)
+    # Model architecture
+    parser.add_argument('--model_channels', default=64, type=int, help='model_channels')
+    parser.add_argument('--channel_mult', default=[1,2,2,2], type=int, nargs='+', help='channel_mult')
+    parser.add_argument('--attn_resolutions', default=[], type=int, nargs='+', help='attn_resolutions')
+    parser.add_argument('--layers_per_block', default=4, type=int, help='num_blocks')
+    
+    config = parser.parse_args()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    config.device = device
+    channels = {'mnist': 1, 'cifar10': 3}
+    config.channels = channels[config.dataset]
+
+    # workdir setup
+    config.expr = f"{config.expr}_{config.dataset}"
+    run_id = datetime.now().strftime("%Y%m%d-%H%M")
+    outdir = f"exps/{config.expr}_{run_id}"
+    os.makedirs(outdir, exist_ok=True)
+    sample_dir = f"{outdir}/samples"
+    os.makedirs(sample_dir, exist_ok=True)
+    ckpt_dir = f"{outdir}/checkpoints"
+    os.makedirs(ckpt_dir, exist_ok=True)
+    config.outdir = outdir
+    config.sample_dir = sample_dir
+    config.ckpt_dir = ckpt_dir
+    
+    logging.basicConfig(filename=f'{outdir}/std.log', filemode='w', 
+                        format='%(asctime)s %(levelname)s --> %(message)s',
+                        level=logging.INFO,
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger()
+    logger.info("#################### Arguments: ####################")
+    for arg in vars(config):
+        logger.info(f"\t{arg}: {getattr(config, arg)}")
+
+    ## set random seed everywhere
+    torch.manual_seed(config.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(config.seed)
+        torch.cuda.manual_seed_all(config.seed)  # for multi-GPU.
+    random.seed(config.seed)  # Python random module.
+    torch.manual_seed(config.seed)
+
+    ## load dataset
+    ### create dataloader
+    if config.dataset == 'mnist':
+        img_dataset = torchvision.datasets.MNIST(root='datasets/mnist', download=True, train=config.train_dataset,
+                                            transform=torchvision.transforms.Compose(
+                                                [torchvision.transforms.Resize(config.img_size),
+                                                    torchvision.transforms.ToTensor(),
+                                                    torchvision.transforms.Normalize((0.5,), (0.5,))]
+                                            ),)
+        # mnist class labels
+        classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
+                    '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+    elif config.dataset == 'cifar10':
+        img_dataset = torchvision.datasets.CIFAR10(root='datasets/cifar', download=True, train=config.train_dataset,
+                                            transform=torchvision.transforms.Compose(
+                                                [torchvision.transforms.Resize(config.img_size),
+                                                    torchvision.transforms.RandomHorizontalFlip(),
+                                                    torchvision.transforms.ToTensor(),
+                                                    torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+                                            ),)
+        # CIFAR10 class labels
+        classes = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    else:
+        raise NotImplementedError(f'dataset {config.dataset} not implemented')
+    # Filter the dataset to only keep desired_class images
+    if config.desired_class != 'all':
+        class_idx = classes.index(config.desired_class)
+        img_dataset = [(img, label) for img, label in img_dataset if label == class_idx]
+
+    ## init model
+    unet = create_model(config)
+    
+    train_edm_model(config, unet, img_dataset, logger, device)
+    

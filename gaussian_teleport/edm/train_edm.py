@@ -4,7 +4,7 @@ join = os.path.join
 import torch
 import torchvision
 from torchvision.utils import save_image
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import copy
 import random
 import logging

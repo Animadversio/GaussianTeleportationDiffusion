@@ -109,7 +109,7 @@ class EDM():
             raise NotImplementedError(f'gt_guide_type {self.cfg.gt_guide_type} not implemented')
         return loss.mean()
     
-    def update_ema(self):
+    def update_ema(self, step):
         ema_halflife_nimg = self.ema_halflife_kimg * 1000
         if self.ema_rampup_ratio is not None:
             ema_halflife_nimg = min(ema_halflife_nimg, step * config.train_batch_size * self.ema_rampup_ratio)
@@ -211,7 +211,7 @@ def train_edm_model(config, unet, img_dataset, device):
         optimizer.step()
         train_loss_values += (batch_loss.detach().item())
         ## Update EMA.
-        edm.update_ema()
+        edm.update_ema(step)
         ## Update state
         if config.train_progress_bar:
             logs = {"loss": loss.detach().item()}

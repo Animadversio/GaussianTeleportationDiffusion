@@ -112,8 +112,8 @@ class EDM():
     def update_ema(self, step):
         ema_halflife_nimg = self.ema_halflife_kimg * 1000
         if self.ema_rampup_ratio is not None:
-            ema_halflife_nimg = min(ema_halflife_nimg, step * config.train_batch_size * self.ema_rampup_ratio)
-        ema_beta = 0.5 ** (config.train_batch_size / max(ema_halflife_nimg, 1e-8))
+            ema_halflife_nimg = min(ema_halflife_nimg, step * self.cfg.train_batch_size * self.ema_rampup_ratio)
+        ema_beta = 0.5 ** (self.cfg.train_batch_size / max(ema_halflife_nimg, 1e-8))
         for p_ema, p_net in zip(self.ema.parameters(), self.model.parameters()):
             p_ema.copy_(p_net.detach().lerp(p_ema, ema_beta))
     

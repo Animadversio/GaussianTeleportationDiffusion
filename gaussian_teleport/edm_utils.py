@@ -163,6 +163,42 @@ def get_default_config(dataset_name, **kwargs):
             "sigma_data": 0.5,
             "spatial_matching": "padding",
         }
+    elif dataset_name == "ffhq64":
+        config = {
+            "DATASET": "ffhq64",
+            "channel_mult": [1, 2, 2],
+            "model_channels": 96,
+            "attn_resolutions": [16,],
+            "layers_per_block": 2,
+            "num_fid_sample": 5000,
+            "fid_batch_size": 1024,
+            "channels": 3,
+            "img_size": 64,
+            "device": "cuda",
+            "sigma_min": 0.002,
+            "sigma_max": 80.0,
+            "rho": 7.0,
+            "sigma_data": 0.5,
+            "spatial_matching": "padding",
+        }
+    elif dataset_name == "afhq256":
+        config = {
+            "DATASET": "afhq256",
+            "channel_mult": [1, 2, 2],
+            "model_channels": 96,
+            "attn_resolutions": [16,],
+            "layers_per_block": 2,
+            "num_fid_sample": 5000,
+            "fid_batch_size": 1024,
+            "channels": 3,
+            "img_size": 64,
+            "device": "cuda",
+            "sigma_min": 0.002,
+            "sigma_max": 80.0,
+            "rho": 7.0,
+            "sigma_data": 0.5,
+            "spatial_matching": "padding",
+        }
     elif dataset_name == "RAVEN10_abstract":
         config = {
             "DATASET": "RAVEN10_abstract",

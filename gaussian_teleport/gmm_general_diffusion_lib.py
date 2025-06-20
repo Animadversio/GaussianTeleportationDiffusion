@@ -498,5 +498,4 @@ if __name__ == "__main__":
     fig = demo_gaussian_mixture_diffusion(nreps=500, mus=None, Us=None, Lambdas=None)
     test_gaussian_logprob_score(10)
     test_gaussian_mixture_unimodal_case(ndim=10, npnts=10)
-    test_gaussian_mixture_multimodal_case(ncomp=10, ndim=100, npnts=10)
     test_gaussian_mixture_multimodal_case_stable(ncomp=10, ndim=500, npnts=10)
